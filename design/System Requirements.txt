@@ -1,0 +1,12 @@
+MQ Broker
+	RAM - 8GB
+	CPU - Core i5
+	
+VM
+	RAM - 16GB
+	CPU - Core i5
+	
+
+Web Service/ Mongo
+	RAM - 8GB
+	CPU - Core i5
