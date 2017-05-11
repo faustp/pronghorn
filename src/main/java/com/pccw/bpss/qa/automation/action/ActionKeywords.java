@@ -14,6 +14,10 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.sikuli.script.App;
+import org.sikuli.script.Key;
+import org.sikuli.script.Pattern;
+import org.sikuli.script.Screen;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import static com.pccw.bpss.qa.automation.Application.REPOSITORY;
 import static com.pccw.bpss.qa.automation.Application.SELECTOR;
 import static com.pccw.bpss.qa.automation.data.Constant.*;
+import static com.pccw.bpss.qa.automation.data.Constant.PROFILE_PROP_IMG_PATH;
 
 /**
  * Created by FaustineP on 07/03/2017.
@@ -34,7 +39,9 @@ public class ActionKeywords {
     final static Logger logger = Logger.getLogger(ActionKeywords.class);
 
 
-    public static WebDriver driver = null;
+    public static WebDriver webDriver = null;
+    public static App appDriver = null;
+    public static Screen screen = null;
 
     /**
      * @param report      IExtentTestClass interface for report logging
@@ -43,7 +50,7 @@ public class ActionKeywords {
      * @param object      Key property selector to identify the CSS Selector path
      * @param data        Input data
      */
-    public static void openBrowser(IExtentTestClass report, String description, String testCaseId,
+    public static void openApplication(IExtentTestClass report, String description, String testCaseId,
                                    String object, String data) {
         try {
             switch (data) {
@@ -54,26 +61,30 @@ public class ActionKeywords {
                     System.setProperty(KEY_IE_DRIVE, FILE_PATH_DRIVER_IE_X32_EXE);
                     DesiredCapabilities capabilities = new DesiredCapabilities();
                     capabilities.setCapability(InternetExplorerDriver.IE_ENSURE_CLEAN_SESSION, true);
-                    driver = new InternetExplorerDriver(capabilities);
-                    driver.manage().window().maximize();
+                    webDriver = new InternetExplorerDriver(capabilities);
+                    webDriver.manage().window().maximize();
                     report.log(LogStatus.INFO, description, data.toUpperCase());
                     break;
                 case "FF":
                 case "FireFox":
                     System.setProperty(KEY_GECKO_DRIVER, FILE_PATH_GECKO_DRIVER_EXE);
-                    driver = new FirefoxDriver();
-                    driver.manage().window().maximize();
+                    webDriver = new FirefoxDriver();
+                    webDriver.manage().window().maximize();
                     report.log(LogStatus.INFO, description, data.toUpperCase());
                     break;
                 case "Chrome":
                 case "chrome":
                     System.setProperty(KEY_CHROME_DRIVER, FILE_PATH_CHROME_DRIVER_EXE);
-                    driver = new ChromeDriver();
-                    driver.manage().window().maximize();
+                    webDriver = new ChromeDriver();
+                    webDriver.manage().window().maximize();
+                    report.log(LogStatus.INFO, description, data.toUpperCase());
+                    break;
+                default:
+                    appDriver = App.open(data);
                     report.log(LogStatus.INFO, description, data.toUpperCase());
                     break;
             }
-            driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+            webDriver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
             logger.info("openBrowser " + data);
         } catch (Exception ex) {
             report.log(LogStatus.ERROR, description, data);
@@ -93,8 +104,8 @@ public class ActionKeywords {
     public static void navigate(IExtentTestClass report, String description, String testCaseId,
                                 String object, String data) {
         try {
-            driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-            driver.get(data);
+            webDriver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+            webDriver.get(data);
             report.log(LogStatus.INFO, description, data);
             logger.info("navigate " + data);
         } catch (Exception ex) {
@@ -112,10 +123,16 @@ public class ActionKeywords {
      * @param object      Key property selector to identify the CSS Selector path
      * @param data        Input data
      */
-    public static void closeBrowser(IExtentTestClass report, String description, String testCaseId,
+    public static void closeApplication(IExtentTestClass report, String description, String testCaseId,
                                     String object, String data) {
         try {
-            driver.quit();
+            if(appDriver != null){
+                appDriver.close();
+            }
+
+            if(webDriver != null){
+                webDriver.quit();
+            }
             report.log(LogStatus.INFO, description, data);
             logger.info("closing browser...");
         } catch (Exception ex) {
@@ -136,8 +153,16 @@ public class ActionKeywords {
     public static void inputTxt(IExtentTestClass report, String description, String testCaseId,
                                 String object, String data) {
         try {
-            driver.findElement(By.cssSelector(SELECTOR.getProperty(object))).clear();
-            driver.findElement(By.cssSelector(SELECTOR.getProperty(object))).sendKeys(data);
+            if(!isCSSSelector(SELECTOR.getProperty(object).toLowerCase())){
+                webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object))).clear();
+                webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object))).sendKeys(data);
+            }else{
+                screen = new Screen();
+                Pattern image = new Pattern(PROFILE_PROP_IMG_PATH.concat(File.separator).concat(SELECTOR.getProperty(object)));
+                screen.wait(image, 10);
+                screen.click();
+                screen.type(data);
+            }
             report.log(LogStatus.INFO, description, data);
             logger.info("inputTxt [" + object + "]" + "[" + data + "]");
         } catch (Exception ex) {
@@ -146,6 +171,16 @@ public class ActionKeywords {
             logger.error(ake);
             throw ake;
         }
+    }
+
+    /**
+     *
+     * @param filename
+     * @return
+     */
+    private static boolean isCSSSelector(String filename){
+        String pattern = ".*\\.(png|jpg|bmp|jpeg|tiff)";
+        return filename.toLowerCase().matches(pattern);
     }
 
     /**
@@ -158,7 +193,64 @@ public class ActionKeywords {
     public static void click(IExtentTestClass report, String description, String testCaseId,
                              String object, String data) {
         try {
-            driver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).click();
+            if(!isCSSSelector(SELECTOR.getProperty(object).toLowerCase())){
+                webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).click();
+            }else{
+                screen = new Screen();
+                Pattern image = new Pattern(PROFILE_PROP_IMG_PATH.concat(File.separator).concat(SELECTOR.getProperty(object)));
+                screen.wait(image, 10);
+                screen.click();
+            }
+            report.log(LogStatus.INFO, description, data);
+            logger.info("click [" + object + "]" + "[" + data + "]");
+        } catch (Exception ex) {
+            report.log(LogStatus.ERROR, description, data);
+            ActionKeywordException ake = new ActionKeywordException(Arrays.toString(ex.getStackTrace()), ex.getCause());
+            logger.error(ake);
+            throw ake;
+        }
+    }
+
+    /**
+     *
+     * @param report
+     * @param description
+     * @param testCaseId
+     * @param object
+     * @param data
+     */
+    public static void doubleClick(IExtentTestClass report, String description, String testCaseId,
+                                   String object, String data) {
+        try {
+            screen = new Screen();
+            Pattern image = new Pattern(PROFILE_PROP_IMG_PATH.concat(File.separator).concat(SELECTOR.getProperty(object)));
+            screen.wait(image, 10);
+            screen.doubleClick();
+            report.log(LogStatus.INFO, description, data);
+            logger.info("click [" + object + "]" + "[" + data + "]");
+        } catch (Exception ex) {
+            report.log(LogStatus.ERROR, description, data);
+            ActionKeywordException ake = new ActionKeywordException(Arrays.toString(ex.getStackTrace()), ex.getCause());
+            logger.error(ake);
+            throw ake;
+        }
+    }
+
+    /**
+     *
+     * @param report
+     * @param description
+     * @param testCaseId
+     * @param object
+     * @param data
+     */
+    public static void rightClick(IExtentTestClass report, String description, String testCaseId,
+                                  String object, String data) {
+        try {
+            screen = new Screen();
+            Pattern image = new Pattern(PROFILE_PROP_IMG_PATH.concat(File.separator).concat(SELECTOR.getProperty(object)));
+            screen.wait(image, 10);
+            screen.rightClick();
             report.log(LogStatus.INFO, description, data);
             logger.info("click [" + object + "]" + "[" + data + "]");
         } catch (Exception ex) {
@@ -179,8 +271,8 @@ public class ActionKeywords {
     public static void inputVerificationCode(IExtentTestClass report, String description, String testCaseId,
                                              String object, String data) throws NoSuchElementException {
         try {
-            String code = driver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getText();
-            driver.findElement(By.cssSelector(SELECTOR.getProperty("loginVerificationTxt"))).sendKeys(code);
+            String code = webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getText();
+            webDriver.findElement(By.cssSelector(SELECTOR.getProperty("loginVerificationTxt"))).sendKeys(code);
             report.log(LogStatus.INFO, description, data);
             logger.info("inputVerification [" + object + "]" + "[" + data + "]");
         } catch (Exception ex) {
@@ -203,9 +295,18 @@ public class ActionKeywords {
                                  String data) throws NoSuchElementException {
         // TODO : provide date format validation
         try {
-            driver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).clear();
-            driver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).sendKeys(data);
-            driver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).sendKeys(Keys.TAB);
+            if(!isCSSSelector(SELECTOR.getProperty(object).toLowerCase())){
+                webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).clear();
+                webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).sendKeys(data);
+                webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).sendKeys(Keys.TAB);
+            }else{
+                screen = new Screen();
+                Pattern image = new Pattern(PROFILE_PROP_IMG_PATH.concat(File.separator).concat(SELECTOR.getProperty(object)));
+                screen.wait(image, 10);
+                screen.click();
+                screen.type(data);
+                screen.type(Key.TAB);
+            }
             report.log(LogStatus.INFO, description, data);
             logger.info("inputDate [" + object + "]" + "[" + data + "]");
         } catch (Exception ex) {
@@ -226,8 +327,12 @@ public class ActionKeywords {
     public static void select(IExtentTestClass report, String description, String testCaseId, String object,
                                          String data) throws NoSuchElementException {
         try {
-            new Select(driver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim())))).
-                    selectByVisibleText(data);
+            if(!isCSSSelector(SELECTOR.getProperty(object).toLowerCase())){
+                new Select(webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim())))).
+                        selectByVisibleText(data);
+            }else{
+                //TODO
+            }
             report.log(LogStatus.INFO, description, data);
             logger.info("selectFromListBox [" + object + "]" + "[" + data + "]");
         } catch (Exception ex) {
@@ -267,8 +372,8 @@ public class ActionKeywords {
     public static void uploadFile(IExtentTestClass report, String description, String testCaseId, String object,
                                   String data) {
         try {
-            driver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).clear();
-            driver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).sendKeys(data);
+            webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).clear();
+            webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object.trim()))).sendKeys(data);
             report.log(LogStatus.INFO, "Upload file[" + data + "]");
             logger.info("uploadFile [" + object + "]" + "[" + data + "]");
         } catch (Exception ex) {
@@ -292,7 +397,7 @@ public class ActionKeywords {
             String FILE_PATH = Constant.OUTPUT_BASE_PATH.concat(File.separator).concat("snapshot").
                     concat(File.separator).concat(testCaseId.replaceAll("\\\\/", "\\")).
                     concat(File.separator).concat(data + ".png");
-            File scrFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+            File scrFile = ((TakesScreenshot) webDriver).getScreenshotAs(OutputType.FILE);
             FileUtils.copyFile(scrFile, new File(FILE_PATH));
             String relativePath = FILE_PATH.replace(new File(Constant.OUTPUT_BASE_PATH).getParent(), "..");
             report.log(LogStatus.INFO, data + "\t" + report.addScreenCapture(relativePath));
@@ -316,11 +421,21 @@ public class ActionKeywords {
     public static void isContentEqualsTo(IExtentTestClass report, String description, String testCaseId,
                                          String object, String data) {
         try {
-            String strContent = driver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getText();
-            if (strContent.trim().equals(data)) {
-                report.log(LogStatus.PASS, description, data);
-            } else {
-                report.log(LogStatus.FAIL, description, data);
+            if(!isCSSSelector(SELECTOR.getProperty(object).toLowerCase())){
+                String strContent = webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getText();
+                if (strContent.trim().equals(data)) {
+                    report.log(LogStatus.PASS, description, data);
+                } else {
+                    report.log(LogStatus.FAIL, description, data);
+                }
+            }else{
+                screen = new Screen();
+                Pattern image = new Pattern(PROFILE_PROP_IMG_PATH.concat(File.separator).concat(SELECTOR.getProperty(object)));
+                if (screen.exists(image) != null) {
+                    report.log(LogStatus.PASS, description, data);
+                } else {
+                    report.log(LogStatus.FAIL, description, data);
+                }
             }
             logger.info("isContentEqualsTo [" + object + "]" + "[" + data + "]");
         } catch (Exception ex) {
@@ -341,7 +456,7 @@ public class ActionKeywords {
     public static void isContentContains(IExtentTestClass report, String description, String testCaseId,
                                          String object, String data) {
         try {
-            String strContent = driver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getText();
+            String strContent = webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getText();
             if (strContent.trim().contains(data)) {
                 report.log(LogStatus.PASS, description, data);
             } else {
@@ -368,12 +483,12 @@ public class ActionKeywords {
         try {
             String info;
             if (object.endsWith("Txt")) {
-                info = driver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getAttribute("value");
+                info = webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getAttribute("value");
             } else if (object.endsWith("ListBox")) {
-                Select selectItem = new Select(driver.findElement(By.cssSelector(SELECTOR.getProperty(object))));
+                Select selectItem = new Select(webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object))));
                 info = selectItem.getFirstSelectedOption().getText();
             } else {
-                info = driver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getText();
+                info = webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getText();
             }
             REPOSITORY.put(data, info);
             report.log(LogStatus.INFO, description, data);
@@ -397,7 +512,7 @@ public class ActionKeywords {
                                     String object, String data) {
         try {
             String info = REPOSITORY.get(data);
-            driver.findElement(By.cssSelector(SELECTOR.getProperty(object))).sendKeys(info);
+            webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object))).sendKeys(info);
             logger.info("retrieveInfo [" + object + "]" + "[" + data + "]");
         } catch (Exception ex) {
             report.log(LogStatus.ERROR, description, data);
@@ -416,7 +531,7 @@ public class ActionKeywords {
             if (info.length > 1) {
                 attr = info[0].trim();
                 expectedValue = info[1].trim();
-                String attrActualValue = driver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getAttribute(attr);
+                String attrActualValue = webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getAttribute(attr);
                 if (Objects.equals(expectedValue, attrActualValue)) {
                     report.log(LogStatus.PASS, description, expectedValue);
                 } else {
@@ -438,7 +553,7 @@ public class ActionKeywords {
                                        String object, String data) {
         boolean isFound = false;
         try {
-            WebElement element = driver.findElement(By.cssSelector(SELECTOR.getProperty(object)));
+            WebElement element = webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object)));
             if (element.isDisplayed()) {
                 isFound = true;
             }
@@ -465,7 +580,7 @@ public class ActionKeywords {
                                      String object, String data) {
         try {
             Thread.sleep(2000);
-            WebElement tableElement = driver.findElement(By.cssSelector("#extProRequestTable"));
+            WebElement tableElement = webDriver.findElement(By.cssSelector("#extProRequestTable"));
             List<WebElement> tableRows = tableElement.findElements(By.tagName("tr"));
             for (WebElement element : tableRows) {
                 List<WebElement> tableColumns = element.findElements(By.tagName("td"));
@@ -499,7 +614,7 @@ public class ActionKeywords {
     public static void viewDetails(IExtentTestClass report, String description, String testCaseId,
                                    String object, String data) {
         try {
-            WebElement tableElement = driver.findElement(By.cssSelector("#extProRequestTable"));
+            WebElement tableElement = webDriver.findElement(By.cssSelector("#extProRequestTable"));
             List<WebElement> tableRows = tableElement.findElements(By.tagName("tr"));
             for (WebElement element : tableRows) {
                 List<WebElement> tableColumns = element.findElements(By.tagName("td"));
@@ -524,7 +639,7 @@ public class ActionKeywords {
     public static void viewInternalDetails(IExtentTestClass report, String description, String testCaseId,
                                            String object, String data) {
         try {
-            WebElement tableElement = driver.findElement(By.cssSelector("#srResultTable"));
+            WebElement tableElement = webDriver.findElement(By.cssSelector("#srResultTable"));
             List<WebElement> tableRows = tableElement.findElements(By.tagName("tr"));
             for (WebElement element : tableRows) {
                 List<WebElement> tableColumns = element.findElements(By.tagName("td"));
@@ -549,7 +664,7 @@ public class ActionKeywords {
                                         String object, String data) {
         try {
             Thread.sleep(2000);
-            WebElement tableElement = driver.findElement(By.cssSelector("#extProRequestTable"));
+            WebElement tableElement = webDriver.findElement(By.cssSelector("#extProRequestTable"));
             List<WebElement> tableRows = tableElement.findElements(By.tagName("tr"));
             boolean isFound = false;
             String subscriptionRefSource = null;
@@ -586,7 +701,7 @@ public class ActionKeywords {
                                           String object, String data) {
         try {
             String info = REPOSITORY.get(data);
-            String strContent = driver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getText();
+            String strContent = webDriver.findElement(By.cssSelector(SELECTOR.getProperty(object))).getText();
             if (strContent.trim().equals(info)) {
                 report.log(LogStatus.PASS, description, strContent + " is equal to" + info);
             } else {
@@ -604,7 +719,7 @@ public class ActionKeywords {
     public static void waitUntil(IExtentTestClass report, String description, String testCaseId,
                                  String object, String data) {
         try {
-            WebDriverWait wait = new WebDriverWait(driver, 90);
+            WebDriverWait wait = new WebDriverWait(webDriver, 90);
             wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(SELECTOR.getProperty(object))));
             Thread.sleep(1000);
             logger.info("waitUntil [" + object + "]" + "[" + data + "]");
@@ -619,7 +734,7 @@ public class ActionKeywords {
     public static void updateSubscription(IExtentTestClass report, String description, String testCaseId,
                                           String object, String data) {
         try {
-            WebElement tableElement = driver.findElement(By.cssSelector("#monthlyReportTable"));
+            WebElement tableElement = webDriver.findElement(By.cssSelector("#monthlyReportTable"));
             List<WebElement> tableRows = tableElement.findElements(By.tagName("tr"));
             for (WebElement element : tableRows) {
                 List<WebElement> tableColumns = element.findElements(By.tagName("td"));
@@ -637,7 +752,17 @@ public class ActionKeywords {
             logger.error(ake);
             throw ake;
         }
+    }
 
+    //TODO
+    public static void closePrompt(){
+        try {
+            screen.closePrompt();
+        } catch (Exception ex) {
+            ActionKeywordException ake = new ActionKeywordException(Arrays.toString(ex.getStackTrace()), ex.getCause());
+            logger.error(ake);
+            throw ake;
+        }
     }
 
 }

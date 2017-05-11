@@ -28,6 +28,11 @@ public class Constant {
     public static final String PROFILE_PROP_BASE_PATH = System.getProperty("user.dir").concat(File.separator)
             .concat("profiles");
 
+    public static final String PROFILE_PROP_IMG_PATH = System.getProperty("user.dir").concat(File.separator).
+            concat("profiles").concat(File.separator).
+            concat("bpss").concat(File.separator).
+            concat("images");
+
     public static final String TEST_CASE_PREFIX_NAME = "TC-";
     public static final String TEST_SCRIPT_PREFIX_NAME = "TS-";
     public static final String TEST_FILE_EXTENSION = ".xlsx";
@@ -51,9 +56,9 @@ public class Constant {
     /**
      * Key properties for drivers
      */
-    public static final String KEY_GECKO_DRIVER = "webdriver.gecko.driver";
-    public static final String KEY_IE_DRIVE = "webdriver.ie.driver";
-    public static final String KEY_CHROME_DRIVER = "webdriver.chrome.driver";
+    public static final String KEY_GECKO_DRIVER = "webdriver.gecko.webDriver";
+    public static final String KEY_IE_DRIVE = "webdriver.ie.webDriver";
+    public static final String KEY_CHROME_DRIVER = "webdriver.chrome.webDriver";
 
     public static final String LOCAL_URL = "http://10.37.131.64:9081/appExt/loginExternal.do";
 

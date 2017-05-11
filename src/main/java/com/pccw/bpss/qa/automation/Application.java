@@ -79,7 +79,7 @@ public class Application extends ApplicationAbstract {
                         application.executeTestScript();
                     } catch (Exception ex) {
                         logger.error(ex);
-                        ActionKeywords.driver.quit();
+                        ActionKeywords.webDriver.quit();
                     } finally {
                         report.endTest(test);
                         report.flush();
