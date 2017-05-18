@@ -1,2 +1,1 @@
-# pronghorn
-PronghornEngine
+# Pronghorn Tool
