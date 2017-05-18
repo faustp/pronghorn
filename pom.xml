@@ -17,6 +17,13 @@
                 <role>Solutions Analyst</role>
             </roles>
         </developer>
+        <developer>
+            <name>Karisse Ravelo</name>
+            <email></email>
+            <roles>
+                <role>Solutions Analyst</role>
+            </roles>
+        </developer>
     </developers>
 
     <build>
@@ -222,6 +229,13 @@
             <artifactId>log4j</artifactId>
             <version>1.2.17</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.pccw.pronghorn</groupId>
+            <artifactId>pronghorn-engine</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
     </dependencies>
 
 </project>

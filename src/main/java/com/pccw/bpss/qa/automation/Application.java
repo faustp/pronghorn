@@ -1,7 +1,17 @@
 package com.pccw.bpss.qa.automation;
 
-import com.pccw.bpss.qa.automation.action.ActionKeywords;
-import com.pccw.bpss.qa.automation.data.FileType;
+
+import com.pccw.ad.pronghorn.engine.IEngine;
+import com.pccw.ad.pronghorn.engine.PronghornEngine;
+import com.pccw.ad.pronghorn.engine.action.ActionKeywords;
+import com.pccw.ad.pronghorn.engine.data.FileType;
+import com.pccw.ad.pronghorn.model.exception.ProfileException;
+import com.pccw.ad.pronghorn.model.exception.TestCaseException;
+import com.pccw.ad.pronghorn.model.profile.Profile;
+import com.pccw.ad.pronghorn.model.profile.Selector;
+import com.pccw.ad.pronghorn.model.profile.Service;
+import com.pccw.ad.pronghorn.model.tc.Script;
+import com.pccw.ad.pronghorn.model.tc.TestCase;
 import com.pccw.bpss.qa.automation.exception.InputFileException;
 import com.pccw.bpss.qa.automation.exception.XLSUtilityException;
 import com.pccw.bpss.qa.automation.utility.XLSUtility;
@@ -12,10 +22,12 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 
-import static com.pccw.bpss.qa.automation.data.Constant.*;
+import static com.pccw.bpss.qa.automation.data.Konstante.*;
+
 
 /**
  * Created by FaustineP on 06/03/2017.
@@ -26,24 +38,32 @@ public class Application extends ApplicationAbstract {
 
     public Application() throws IOException {
         setUpLogger();
-        initializeRepository();
-        actionKeywords = new ActionKeywords();
-        methods = actionKeywords.getClass().getMethods();
     }
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws IllegalAccessException, InvocationTargetException, ProfileException {
+        logger.info("Starting application....");
+        Profile profile = loadProfileData(args);
+        IEngine engine = new PronghornEngine(profile);
+        engine.execute();
+    }
+
+    public static Profile loadProfileData(String args[]) {
         logger.info("Starting application....");
         List<File> serviceFolders = null;
-        Application application = null;
+        Selector selector;
+        Profile profile = new Profile();
+        LinkedHashSet<Service> services = new LinkedHashSet<>();
+
         try {
-            loadProfile(args);
-            application = new Application();
+            selector = loadPropertiesData(args);
+
             serviceFolders = XLSUtility.getFiles(INPUT_BASE_PATH, FileType.FOLDER);
         } catch (IOException | XLSUtilityException e) {
             logger.error(e);
-            return;
+            return null;
         }
-        for (File serviceFolder : serviceFolders) {
+
+        for (File serviceFolder : serviceFolders) { //project folder
             String reportFileName = OUTPUT_BASE_PATH.concat(File.separator).
                     concat(serviceFolder.getName().concat(".html"));
             report = new ExtentReports(reportFileName, false, DisplayOrder.OLDEST_FIRST);
@@ -55,38 +75,22 @@ public class Application extends ApplicationAbstract {
             } catch (XLSUtilityException e) {
                 logger.error(e);
                 continue;
+            } catch (TestCaseException e) {
+                e.printStackTrace();
             }
-            if (testCaseData == null) continue;
-            for (Map.Entry<String, Map<String, String>> testCaseContent : testCaseData.getContent().entrySet()) {
-                String testScript = null;
-                try {
-                    testScript = serviceFolder.getCanonicalPath().concat(File.separator).
-                            concat(TEST_SCRIPT_PREFIX_NAME.concat(testCaseContent.getKey()).concat(TEST_FILE_EXTENSION));
-                    XLSUtility.setExcelFile(testScript);
-                } catch (IOException e) {
-                    logger.error(e);
-                    continue;
-                } catch (XLSUtilityException e) {
-                    logger.error(e);
-                    continue;
-                }
-                for (Map.Entry<String, String> testCaseInfoIterator : testCaseContent.getValue().entrySet()) {
-                    testCaseId = testCaseInfoIterator.getKey();
-                    String testCaseObjective = testCaseInfoIterator.getValue();
-                    testCaseId = testCaseId.replaceFirst("Fct\\/Sys\\/", "");
-                    test = report.startTest(testCaseId, testCaseObjective);
-                    try {
-                        application.executeTestScript();
-                    } catch (Exception ex) {
-                        logger.error(ex);
-                        ActionKeywords.driver.quit();
-                    } finally {
-                        report.endTest(test);
-                        report.flush();
-                        REPOSITORY.clear();
-                    }
-                }
+            if (testCaseData == null)// continue;
+                return null;
+            else {
+                Service service = new Service();
+                service.setName(args[1]);
+                service.setTestCases(testCaseData);
+                services.add(service);
             }
         }
+        profile.setSelector(selector);
+        profile.setServices(services);
+        profile.setName(args[0].trim());
+
+        return profile;
     }
 }

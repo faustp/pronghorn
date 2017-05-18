@@ -1,7 +1,7 @@
 package com.pccw.bpss.qa.automation.utility;
 
-import com.pccw.bpss.qa.automation.data.Constant;
-import com.pccw.bpss.qa.automation.data.FileType;
+import com.pccw.ad.pronghorn.engine.data.FileType;
+import com.pccw.bpss.qa.automation.data.Konstante;
 import com.pccw.bpss.qa.automation.exception.XLSUtilityException;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.pccw.bpss.qa.automation.data.Constant.*;
+import static com.pccw.bpss.qa.automation.data.Konstante.*;
 
 /**
  * Created by FaustineP on 07/03/2017.
@@ -80,7 +80,7 @@ public class XLSUtility {
     //This methods takes three arguments (Sheet name, Test Case Id & Test case row number)
     public static int getTestStepsCount(String sheetName, String testCaseId, int iTestCaseStart) throws Exception {
         for (int i = iTestCaseStart; i <= XLSUtility.getRowCount(sheetName); i++) {
-            if (!testCaseId.equals(XLSUtility.getCellData(i, Constant.COL_TEST_CASE_ID, sheetName))) {
+            if (!testCaseId.equals(XLSUtility.getCellData(i, Konstante.COL_TEST_CASE_ID, sheetName))) {
                 return i;
             }
         }
