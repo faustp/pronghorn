@@ -23,8 +23,6 @@ public class Konstante {
             .concat("profiles");
     public static final String INPUT_BASE_PATH = System.getProperty("user.dir").concat(File.separator)
             .concat("input");
-    public static final String OUTPUT_BASE_PATH = System.getProperty("user.dir").concat(File.separator)
-            .concat("output").concat(File.separator).concat("qa").concat(File.separator).concat("report");
     public static final String CONFIG_BASE_PATH_FOLDER =System.getProperty("user.dir").concat(File.separator)
             .concat("conf");
 
