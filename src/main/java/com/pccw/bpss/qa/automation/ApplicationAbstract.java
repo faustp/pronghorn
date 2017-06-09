@@ -38,7 +38,6 @@ public abstract class ApplicationAbstract {
     protected static HashSet<TestCase> testCaseData;
 
 
-
     protected static HashSet<TestCase> loadTestCaseData(File serviceFolder) throws
             IOException, InvalidFormatException, InputFileException, XLSUtilityException, TestCaseException {
         logger.info("Loading test cases...");
@@ -60,7 +59,7 @@ public abstract class ApplicationAbstract {
                                 tcSheet.getRow(rowIndex).getCell(9).getStringCellValue().equalsIgnoreCase("N"))
                             continue;
 
-                        testCaseId = tcSheet.getRow(rowIndex).getCell(0).getStringCellValue();
+                        testCaseId = tcSheet.getRow(rowIndex).getCell(0).getStringCellValue().replaceAll("^Fct/Sys/", "");
                         // XLSUtility.setExcelFile();
                         String testCaseObjective = tcSheet.getRow(rowIndex).getCell(1).getStringCellValue();
                         String testScriptFile = file.getParent().concat(File.separator).concat(TEST_SCRIPT_PREFIX_NAME).
@@ -73,8 +72,6 @@ public abstract class ApplicationAbstract {
                                 addScripts(generateScript(testScriptFile, testCaseId)).
                                 build();
                         testCases.add(testCase);
-
-                        logger.info("Loading " + testCaseId);
                     }
                 }
             }
@@ -128,9 +125,7 @@ public abstract class ApplicationAbstract {
             String value = SELECTOR.getProperty(key);
             serviceSelector.put(key, value);
             selectors.put(serviceName, serviceSelector);
-            selector.setSelectors(selectors);
         }
-
         return selector;
     }
 
@@ -142,20 +137,25 @@ public abstract class ApplicationAbstract {
 
             XSSFSheet tcSheet = testScript.getSheet(sheetName);
             int tcSheetRowCount = tcSheet.getLastRowNum() + 1;
-
             for (int rowIndex = 1; rowIndex < tcSheetRowCount; rowIndex++) {
                 Script script = new Script();
+                Selector selector = new Selector();
+                selector.setKey(tcSheet.getRow(rowIndex).getCell(COL_TEST_PAGE_OBJECT) == null ? null : tcSheet.getRow(rowIndex).getCell(COL_TEST_PAGE_OBJECT).getStringCellValue());
+                selector.setValue((selector.getKey() == null || selector.getKey().isEmpty()) ?
+                        "" : SELECTOR.getProperty(selector.getKey()));
                 script.setDescription(tcSheet.getRow(rowIndex).getCell(COL_TEST_DESCRIPTION) == null ? null : tcSheet.getRow(rowIndex).getCell(COL_TEST_DESCRIPTION).getStringCellValue());
-                script.setObjectKey(tcSheet.getRow(rowIndex).getCell(COL_TEST_PAGE_OBJECT) == null ? null : tcSheet.getRow(rowIndex).getCell(COL_TEST_PAGE_OBJECT).getStringCellValue());
+                script.setSelector(selector);
                 script.setAction(tcSheet.getRow(rowIndex).getCell(COL_TEST_ACTION_KEYWORD) == null ? null : tcSheet.getRow(rowIndex).getCell(COL_TEST_ACTION_KEYWORD).getStringCellValue());
                 script.setInputData(tcSheet.getRow(rowIndex).getCell(COL_TEST_INPUT_DATA) == null ? null : tcSheet.getRow(rowIndex).getCell(COL_TEST_INPUT_DATA).getStringCellValue());
                 scripts.add(script);
-                logger.info("Loading " + testCaseId);
+
             }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            testScript.close();
+            if (testScript != null) {
+                testScript.close();
+            }
         }
 
 
