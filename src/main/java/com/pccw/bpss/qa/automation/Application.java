@@ -37,10 +37,15 @@ public class Application extends ApplicationAbstract {
     final static Logger logger = Logger.getLogger(Application.class);
     static String projFolder = null;
     static String profileFolder = null;
+    static String projectName = null;
+    static String[] serviceNameList;
 
     public static void main(String args[]) throws IllegalAccessException, InvocationTargetException, ProfileException, IOException, FindFailed {
         setUpLogger();
-        projFolder = INPUT_BASE_PATH.concat(File.separator).concat(args[0]).concat(File.separator).concat(args[1]);
+        projectName = args[0].trim();
+        serviceNameList = args[1].split(",");
+
+        projFolder = INPUT_BASE_PATH.concat(File.separator).concat(args[0]);
         profileFolder = PROFILE_PROP_BASE_PATH;
         logger.info("Starting application....");
 
@@ -51,9 +56,12 @@ public class Application extends ApplicationAbstract {
             throw new FileNotFoundException(projFolderPath.getAbsolutePath() + "\n"+ profileFolderPath.exists());
         }
 
-        Profile profile = loadProfileData(args);
-        IEngine engine = new PronghornEngine(profile);
-        engine.execute();
+        for(String service: serviceNameList){
+            args[1] = service;
+            Profile profile = loadProfileData(args);
+            IEngine engine = new PronghornEngine(profile);
+            engine.execute();
+        }
     }
 
     public static Profile loadProfileData(String args[]) {
@@ -93,7 +101,7 @@ public class Application extends ApplicationAbstract {
             }
        // }
         profile.setServices(services);
-        profile.setName(args[0].trim());
+        profile.setName(projectName);
 
         return profile;
     }
