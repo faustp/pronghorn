@@ -19,12 +19,14 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.sikuli.script.FindFailed;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashSet;
 import java.util.List;
 
 import static com.pccw.bpss.qa.automation.data.Konstante.INPUT_BASE_PATH;
+import static com.pccw.bpss.qa.automation.data.Konstante.PROFILE_PROP_BASE_PATH;
 
 
 /**
@@ -33,10 +35,23 @@ import static com.pccw.bpss.qa.automation.data.Konstante.INPUT_BASE_PATH;
 public class Application extends ApplicationAbstract {
 
     final static Logger logger = Logger.getLogger(Application.class);
+    static String projFolder = null;
+    static String profileFolder = null;
 
     public static void main(String args[]) throws IllegalAccessException, InvocationTargetException, ProfileException, IOException, FindFailed {
         setUpLogger();
+        projFolder = INPUT_BASE_PATH.concat(File.separator).concat(args[0]).concat(File.separator).concat(args[1]);
+        profileFolder = PROFILE_PROP_BASE_PATH;
         logger.info("Starting application....");
+
+        //check if path is existing and valid
+        File projFolderPath = new File(projFolder);
+        File profileFolderPath = new File(profileFolder);
+        if (!projFolderPath.exists() || !profileFolderPath.exists())
+        {
+            throw new FileNotFoundException(projFolderPath.getAbsolutePath() + "\n"+ profileFolderPath.exists());
+        }
+
         Profile profile = loadProfileData(args);
         IEngine engine = new PronghornEngine(profile);
         engine.execute();
@@ -49,24 +64,23 @@ public class Application extends ApplicationAbstract {
 
         try {
             loadPropertiesData(args);
-            serviceFolders = XLSUtility.getFiles(INPUT_BASE_PATH, FileType.FOLDER);
-        } catch (IOException | XLSUtilityException e) {
+
+           // serviceFolders = XLSUtility.getFiles(projFolder, FileType.FOLDER);
+        } catch (IOException e) {
             logger.error(e);
             return null;
         }
 
-        for (File serviceFolder : serviceFolders) { //project folder
+       // for (File serviceFolder : serviceFolders) { //project folder
             String reportFileName = Constant.OUTPUT_BASE_PATH.concat(File.separator).
-                    concat(serviceFolder.getName().concat(".html"));
+                    concat(args[1].concat(".html"));
             report = new ExtentReports(reportFileName, false, DisplayOrder.OLDEST_FIRST);
             try {
-                testCaseData = loadTestCaseData(serviceFolder);
+                testCaseData = loadTestCaseData(new File(projFolder));
             } catch (IOException | InvalidFormatException | InputFileException e) {
                 logger.error(e);
-                continue;
             } catch (XLSUtilityException e) {
                 logger.error(e);
-                continue;
             } catch (TestCaseException e) {
                 logger.error(e);
             }
@@ -78,7 +92,7 @@ public class Application extends ApplicationAbstract {
                 service.setTestCases(testCaseData);
                 services.add(service);
             }
-        }
+       // }
         profile.setServices(services);
         profile.setName(args[0].trim());
 
