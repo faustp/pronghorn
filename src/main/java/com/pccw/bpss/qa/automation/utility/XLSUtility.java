@@ -75,16 +75,4 @@ public class XLSUtility {
         if (arrayFiles == null) throw new XLSUtilityException("No input file found.");
         return Arrays.asList(arrayFiles);
     }
-
-    //This methods is to get the count of the test steps of test case
-    //This methods takes three arguments (Sheet name, Test Case Id & Test case row number)
-    public static int getTestStepsCount(String sheetName, String testCaseId, int iTestCaseStart) throws Exception {
-        for (int i = iTestCaseStart; i <= XLSUtility.getRowCount(sheetName); i++) {
-            if (!testCaseId.equals(XLSUtility.getCellData(i, Konstante.COL_TEST_CASE_ID, sheetName))) {
-                return i;
-            }
-        }
-        excelSheet = excelBook.getSheet(sheetName);
-        return excelSheet.getLastRowNum() + 1;
-    }
 }

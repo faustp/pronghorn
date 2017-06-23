@@ -54,25 +54,23 @@ public abstract class ApplicationAbstract {
                 int tcSheetRowCount = tcSheet.getLastRowNum() + 1;
 
                 for (int rowIndex = 1; rowIndex < tcSheetRowCount; rowIndex++) {
-                    if (rowIndex % 2 != 0) {
-                        if (tcSheet.getRow(rowIndex).getCell(9) == null ||
-                                tcSheet.getRow(rowIndex).getCell(9).getStringCellValue().equalsIgnoreCase("N"))
-                            continue;
+                    if (tcSheet.getRow(rowIndex).getCell(8) == null ||
+                            tcSheet.getRow(rowIndex).getCell(8).getStringCellValue().equalsIgnoreCase("N"))
+                        continue;
 
-                        testCaseId = tcSheet.getRow(rowIndex).getCell(0).getStringCellValue().replaceAll("^Fct/Sys/", "");
-                        // XLSUtility.setExcelFile();
-                        String testCaseObjective = tcSheet.getRow(rowIndex).getCell(1).getStringCellValue();
-                        String testScriptFile = file.getParent().concat(File.separator).concat(TEST_SCRIPT_PREFIX_NAME).
-                                concat(tcSheet.getSheetName()).concat(TEST_FILE_EXTENSION);
-                        TestCase testCase = new TestCase.Builder().
-                                addIdentifier(testCaseId).
-                                addObjective(testCaseObjective).
-                                addIsActive(true).
-                                addAuthor(tcSheet.getRow(rowIndex).getCell(6).getStringCellValue()).
-                                addScripts(generateScript(testScriptFile, testCaseId)).
-                                build();
-                        testCases.add(testCase);
-                    }
+                    testCaseId = tcSheet.getRow(rowIndex).getCell(0).getStringCellValue().replaceAll("^Fct/Sys/", "");
+                    // XLSUtility.setExcelFile();
+                    String testCaseObjective = tcSheet.getRow(rowIndex).getCell(1).getStringCellValue();
+                    String testScriptFile = file.getParent().concat(File.separator).concat(TEST_SCRIPT_PREFIX_NAME).
+                            concat(tcSheet.getSheetName()).concat(TEST_FILE_EXTENSION);
+                    TestCase testCase = new TestCase.Builder().
+                            addIdentifier(testCaseId).
+                            addObjective(testCaseObjective).
+                            addIsActive(true).
+                            addAuthor(tcSheet.getRow(rowIndex).getCell(5).getStringCellValue()).
+                            addScripts(generateScript(testScriptFile, testCaseId)).
+                            build();
+                    testCases.add(testCase);
                 }
             }
         }

@@ -12,11 +12,10 @@ public class Konstante {
     public static final String TEST_FILE_EXTENSION = ".xlsx";
 
     //test script columns
-    public static final int COL_TEST_CASE_ID = 0;
-    public static final int COL_TEST_DESCRIPTION = 1;
-    public static final int COL_TEST_PAGE_OBJECT = 2;
-    public static final int COL_TEST_ACTION_KEYWORD = 3;
-    public static final int COL_TEST_INPUT_DATA = 4;
+    public static final int COL_TEST_DESCRIPTION = 0;
+    public static final int COL_TEST_PAGE_OBJECT = 1;
+    public static final int COL_TEST_ACTION_KEYWORD = 2;
+    public static final int COL_TEST_INPUT_DATA = 3;
 
     //file paths
     public static final String PROFILE_PROP_BASE_PATH = System.getProperty("user.dir").concat(File.separator)
