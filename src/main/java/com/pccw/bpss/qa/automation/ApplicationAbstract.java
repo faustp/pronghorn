@@ -52,7 +52,7 @@ public abstract class ApplicationAbstract {
             for (int tcSheetIndex = 0; tcSheetIndex < tcSheetCount; tcSheetIndex++) { //sheets ng test case
                 XSSFSheet tcSheet = testCaseBook.getSheetAt(tcSheetIndex);
 
-                for(String service: serviceNames) {
+                for(String service: serviceNames) { //checking if the sheet name is in the args list
                     if (tcSheet.getSheetName().equalsIgnoreCase(service)){
                         int tcSheetRowCount = tcSheet.getLastRowNum() + 1;
 
@@ -67,7 +67,7 @@ public abstract class ApplicationAbstract {
                             String testScriptFile = file.getParent().concat(File.separator).concat(TEST_SCRIPT_PREFIX_NAME).
                                     concat(tcSheet.getSheetName()).concat(TEST_FILE_EXTENSION);
                             TestCase testCase = new TestCase.Builder().
-                                    addIdentifier(testCaseId + "-" + tcSheet.getSheetName()).
+                                    addIdentifier(testCaseId + "-" + tcSheet.getSheetName()). //TC-{serviceName} for easy identification
                                     addObjective(testCaseObjective).
                                     addIsActive(true).
                                     addAuthor(tcSheet.getRow(rowIndex).getCell(5).getStringCellValue()).
@@ -99,7 +99,7 @@ public abstract class ApplicationAbstract {
         SELECTOR = new Properties(System.getProperties());
 
         //service properties
-        for(String serviceName: serviceNameArr){
+        for(String serviceName: serviceNameArr){ //load all properties file @iteration all services in args[1]
             String servicePropertyPath = PROFILE_PROP_BASE_PATH.concat(File.separator).concat(profileName).
                     concat(File.separator).concat(serviceName.concat(".properties"));
 
@@ -141,7 +141,7 @@ public abstract class ApplicationAbstract {
         for (String key : SELECTOR.stringPropertyNames()) {
             String value = SELECTOR.getProperty(key);
             serviceSelector.put(key, value);
-            selectors.put(profileName, serviceSelector);
+            selectors.put(profileName, serviceSelector); //changed from serviceName to profileName
         }
         return selector;
     }
