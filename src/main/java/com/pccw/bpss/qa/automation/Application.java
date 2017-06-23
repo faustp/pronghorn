@@ -43,7 +43,6 @@ public class Application extends ApplicationAbstract {
     }
 
     public static Profile loadProfileData(String args[]) {
-        logger.info("Starting application....");
         List<File> serviceFolders = null;
         Profile profile = new Profile();
         LinkedHashSet<Service> services = new LinkedHashSet<>();
