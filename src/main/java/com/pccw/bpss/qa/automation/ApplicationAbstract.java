@@ -38,7 +38,7 @@ public abstract class ApplicationAbstract {
     protected static HashSet<TestCase> testCaseData;
 
 
-    protected static HashSet<TestCase> loadTestCaseData(File serviceFolder) throws
+    protected static HashSet<TestCase> loadTestCaseData(File serviceFolder, String[] serviceNames) throws
             IOException, InvalidFormatException, InputFileException, XLSUtilityException, TestCaseException {
         logger.info("Loading test cases...");
 
@@ -51,26 +51,31 @@ public abstract class ApplicationAbstract {
 
             for (int tcSheetIndex = 0; tcSheetIndex < tcSheetCount; tcSheetIndex++) { //sheets ng test case
                 XSSFSheet tcSheet = testCaseBook.getSheetAt(tcSheetIndex);
-                int tcSheetRowCount = tcSheet.getLastRowNum() + 1;
 
-                for (int rowIndex = 1; rowIndex < tcSheetRowCount; rowIndex++) {
-                    if (tcSheet.getRow(rowIndex).getCell(8) == null ||
-                            tcSheet.getRow(rowIndex).getCell(8).getStringCellValue().equalsIgnoreCase("N"))
-                        continue;
+                for(String service: serviceNames) {
+                    if (tcSheet.getSheetName().equalsIgnoreCase(service)){
+                        int tcSheetRowCount = tcSheet.getLastRowNum() + 1;
 
-                    testCaseId = tcSheet.getRow(rowIndex).getCell(0).getStringCellValue().replaceAll("^Fct/Sys/", "");
-                    // XLSUtility.setExcelFile();
-                    String testCaseObjective = tcSheet.getRow(rowIndex).getCell(1).getStringCellValue();
-                    String testScriptFile = file.getParent().concat(File.separator).concat(TEST_SCRIPT_PREFIX_NAME).
-                            concat(tcSheet.getSheetName()).concat(TEST_FILE_EXTENSION);
-                    TestCase testCase = new TestCase.Builder().
-                            addIdentifier(testCaseId).
-                            addObjective(testCaseObjective).
-                            addIsActive(true).
-                            addAuthor(tcSheet.getRow(rowIndex).getCell(5).getStringCellValue()).
-                            addScripts(generateScript(testScriptFile, testCaseId)).
-                            build();
-                    testCases.add(testCase);
+                        for (int rowIndex = 1; rowIndex < tcSheetRowCount; rowIndex++) {
+                            if (tcSheet.getRow(rowIndex).getCell(8) == null ||
+                                    tcSheet.getRow(rowIndex).getCell(8).getStringCellValue().equalsIgnoreCase("N"))
+                                continue;
+
+                            testCaseId = tcSheet.getRow(rowIndex).getCell(0).getStringCellValue().replaceAll("^Fct/Sys/", "");
+                            // XLSUtility.setExcelFile();
+                            String testCaseObjective = tcSheet.getRow(rowIndex).getCell(1).getStringCellValue();
+                            String testScriptFile = file.getParent().concat(File.separator).concat(TEST_SCRIPT_PREFIX_NAME).
+                                    concat(tcSheet.getSheetName()).concat(TEST_FILE_EXTENSION);
+                            TestCase testCase = new TestCase.Builder().
+                                    addIdentifier(testCaseId + "-" + tcSheet.getSheetName()).
+                                    addObjective(testCaseObjective).
+                                    addIsActive(true).
+                                    addAuthor(tcSheet.getRow(rowIndex).getCell(5).getStringCellValue()).
+                                    addScripts(generateScript(testScriptFile, testCaseId)).
+                                    build();
+                            testCases.add(testCase);
+                        }
+                    }
                 }
             }
         }
@@ -89,30 +94,44 @@ public abstract class ApplicationAbstract {
             throw new MissingFormatArgumentException("Please provide [profile_name] [service_name] as argument");
 
         String profileName = args[0].trim();
-        String serviceName = args[1].trim();
+        String[] serviceNameArr = args[1].trim().split(",");
+
+        SELECTOR = new Properties(System.getProperties());
+
+        //service properties
+        for(String serviceName: serviceNameArr){
+            String servicePropertyPath = PROFILE_PROP_BASE_PATH.concat(File.separator).concat(profileName).
+                    concat(File.separator).concat(serviceName.concat(".properties"));
+
+            if (!new File(servicePropertyPath).exists()) {
+                IOException ioe = new IOException("File does not exists ".concat(servicePropertyPath));
+                logger.info(ioe.getMessage());
+                throw ioe;
+            }
+
+            FileInputStream serviceProp = new FileInputStream(servicePropertyPath);
+
+            logger.info("Loading property files [" + servicePropertyPath + " ]");
+
+            SELECTOR.load(serviceProp);
+        }
+
+        //global properties
         String globalPropertyPath = PROFILE_PROP_BASE_PATH.concat(File.separator).concat(profileName).
                 concat(File.separator).concat("global.properties");
-        String servicePropertyPath = PROFILE_PROP_BASE_PATH.concat(File.separator).concat(profileName).
-                concat(File.separator).concat(serviceName.concat(".properties"));
 
         if (!new File(globalPropertyPath).exists()) {
             IOException ioe = new IOException("File does not exists ".concat(globalPropertyPath));
             logger.info(ioe.getMessage());
             throw ioe;
         }
-        if (!new File(servicePropertyPath).exists()) {
-            IOException ioe = new IOException("File does not exists ".concat(servicePropertyPath));
-            logger.info(ioe.getMessage());
-            throw ioe;
-        }
-        FileInputStream globalProp = new FileInputStream(globalPropertyPath);
-        FileInputStream serviceProp = new FileInputStream(servicePropertyPath);
 
-        logger.info("Loading property files [" + globalPropertyPath + "," + servicePropertyPath + " ]");
-        SELECTOR = new Properties(System.getProperties());
+        FileInputStream globalProp = new FileInputStream(globalPropertyPath);
+
+        logger.info("Loading property files [" + globalPropertyPath + " ]");
+
         //Load all the properties from Object Repository property file in to OR object
         SELECTOR.load(globalProp);
-        SELECTOR.load(serviceProp);
 
         Selector selector = new Selector();
         HashMap<String, HashMap<String, String>> selectors = new HashMap<>();
@@ -122,7 +141,7 @@ public abstract class ApplicationAbstract {
         for (String key : SELECTOR.stringPropertyNames()) {
             String value = SELECTOR.getProperty(key);
             serviceSelector.put(key, value);
-            selectors.put(serviceName, serviceSelector);
+            selectors.put(profileName, serviceSelector);
         }
         return selector;
     }

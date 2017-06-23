@@ -56,12 +56,9 @@ public class Application extends ApplicationAbstract {
             throw new FileNotFoundException(projFolderPath.getAbsolutePath() + "\n"+ profileFolderPath.exists());
         }
 
-        for(String service: serviceNameList){
-            args[1] = service;
-            Profile profile = loadProfileData(args);
-            IEngine engine = new PronghornEngine(profile);
-            engine.execute();
-        }
+        Profile profile = loadProfileData(args);
+        IEngine engine = new PronghornEngine(profile);
+        engine.execute();
     }
 
     public static Profile loadProfileData(String args[]) {
@@ -83,7 +80,7 @@ public class Application extends ApplicationAbstract {
                     concat(args[1].concat(".html"));
             report = new ExtentReports(reportFileName, false, DisplayOrder.OLDEST_FIRST);
             try {
-                testCaseData = loadTestCaseData(new File(projFolder));
+                testCaseData = loadTestCaseData(new File(projFolder), args[1].split(","));
             } catch (IOException | InvalidFormatException | InputFileException e) {
                 logger.error(e);
             } catch (XLSUtilityException e) {
