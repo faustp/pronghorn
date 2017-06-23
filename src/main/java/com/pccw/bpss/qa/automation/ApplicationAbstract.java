@@ -42,7 +42,7 @@ public abstract class ApplicationAbstract {
             IOException, InvalidFormatException, InputFileException, XLSUtilityException, TestCaseException {
         logger.info("Loading test cases...");
 
-        HashSet<TestCase> testCases = new HashSet<>();
+        LinkedHashSet<TestCase> testCases = new LinkedHashSet<>();
         List<File> testCasesPath = XLSUtility.getFiles(serviceFolder.getCanonicalPath(), TEST_CASE);
 
         for (File file : testCasesPath) {
