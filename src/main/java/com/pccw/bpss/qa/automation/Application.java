@@ -44,10 +44,9 @@ public class Application extends ApplicationAbstract {
         profileFolder = PROFILE_PROP_BASE_PATH;
         logger.info("Starting application....");
 
-        //check if path is existing and valid
         File projFolderPath = new File(projFolder);
         File profileFolderPath = new File(profileFolder);
-        if (!projFolderPath.exists() || !profileFolderPath.exists())
+        if (!projFolderPath.exists() || !profileFolderPath.exists()) //check if path is existing and valid
         {
             throw new FileNotFoundException(projFolderPath.getAbsolutePath() + "\n"+ profileFolderPath.exists());
         }
